@@ -1,0 +1,48 @@
+# Composer dependencies
+vendor/
+
+# Environment / secrets
+.env
+.env.*
+*.ini
+*.local
+
+# Logs and runtime files
+*.log
+logs/
+log/
+cache/
+tmp/
+temp/
+
+# Uploads or generated content
+uploads/
+public/uploads/
+storage/
+
+# Database exports / local data dumps
+数据表/
+*.sql
+*.csv
+
+# Backup and duplicate files
+* copy*.php
+* copy*.html
+* 副本*
+
+# IDE / editor settings
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# PHP session/cache files
+sess_*
+*.cache

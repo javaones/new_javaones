@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>课表小程序</title>
+  <style>
+    :root {
+      --bg1: #e8f5ff;
+      --bg2: #fff7df;
+      --card: rgba(255, 255, 255, 0.72);
+      --line: rgba(255, 255, 255, 0.8);
+      --text: #1f3a56;
+      --muted: #5f7488;
+      --shadow: 0 18px 44px rgba(52, 78, 106, 0.16);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,.95) 0 12%, transparent 13%),
+        radial-gradient(circle at top right, rgba(255,255,255,.75) 0 8%, transparent 9%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 18px;
+    }
+
+    .app {
+      width: min(980px, 100%);
+      background: var(--card);
+      backdrop-filter: blur(14px);
+      border: 2px solid rgba(255,255,255,.75);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .app::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(255,255,255,.42), transparent 30%),
+                  radial-gradient(circle at bottom left, rgba(59,130,246,.10), transparent 28%);
+      pointer-events: none;
+    }
+
+    .header, .toolbar, .layout, .footer, .empty-tip {
+      position: relative;
+      z-index: 1;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(59,130,246,.10);
+      border: 1px solid rgba(59,130,246,.16);
+      color: #2d6cdf;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 42px);
+      letter-spacing: 1px;
+    }
+
+    .header p {
+      display: none;
+    }
+
+    .toolbar {
+      display: none;
+    }
+
+    .order-wrap {
+      display: none;
+    }
+
+    .order-wrap h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    .order-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .tool-input {
+      flex: 1 1 280px;
+      min-height: 46px;
+      border: 1px solid rgba(59,130,246,.22);
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-size: 15px;
+      outline: none;
+      background: rgba(255,255,255,.86);
+      color: var(--text);
+    }
+
+    .tool-input::placeholder { color: #8aa0b5; }
+
+    .tool-btn {
+      border: none;
+      border-radius: 14px;
+      padding: 11px 16px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      box-shadow: 0 10px 18px rgba(59,130,246,.20);
+    }
+
+    .tool-btn.secondary { background: linear-gradient(135deg, #64748b, #334155); }
+    .tool-btn.warn { background: linear-gradient(135deg, #f59e0b, #ea580c); }
+    .tool-btn:active { transform: translateY(1px); }
+
+    .layout {
+      display: block;
+    }
+
+    .board {
+      padding: 14px;
+      background: rgba(255,255,255,.74);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.5);
+    }
+
+    .board-top {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+
+    .board-top h2 { margin: 0; font-size: 18px; display: none; }
+
+    .hint {
+      font-size: 13px;
+      color: #44607a;
+      background: rgba(59,130,246,.10);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .schedule {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .course-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .course-btn {
+      flex: 1 1 auto;
+      border: none;
+      min-height: 40px;
+      border-radius: 12px;
+      padding: 6px 8px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      box-shadow: 0 10px 16px rgba(0,0,0,.09);
+      transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+      position: relative;
+    }
+
+    .course-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 26px rgba(0,0,0,.14);
+    }
+
+    .course-btn:active { cursor: grabbing; }
+
+    .course-btn.dragging {
+      opacity: .92;
+      transform: scale(1.03);
+      box-shadow: 0 20px 32px rgba(0,0,0,.20);
+      z-index: 10;
+    }
+
+    .course-btn.swap-highlight {
+      outline: 3px solid rgba(255,255,255,.55);
+      outline-offset: 2px;
+    }
+
+    .course-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .course-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,.22);
+      font-size: 14px;
+      flex: 0 0 auto;
+    }
+
+    .course-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      text-align: left;
+    }
+
+    .course-name { font-size: 14px; }
+
+    .course-order {
+      width: 52px;
+      min-width: 52px;
+      height: 32px;
+      border: 1px solid rgba(59,130,246,.18);
+      border-radius: 9px;
+      background: rgba(255,255,255,.92);
+      color: #1f3a56;
+      font-size: 12px;
+      font-weight: 900;
+      text-align: center;
+      outline: none;
+      padding: 0 3px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.6);
+    }
+
+    .course-order::placeholder {
+      color: #8aa0b5;
+      font-weight: 700;
+    }
+
+    .course-order::-webkit-outer-spin-button,
+    .course-order::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .course-order[type="number"] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    .drag-tip {
+      font-size: 10px;
+      font-weight: 700;
+      opacity: .88;
+      background: rgba(255,255,255,.18);
+      padding: 4px 7px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .math { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .chinese { background: linear-gradient(135deg, #f97316, #fb7185); }
+    .english { background: linear-gradient(135deg, #8b5cf6, #6366f1); }
+    .science { background: linear-gradient(135deg, #22c55e, #10b981); }
+    .music { background: linear-gradient(135deg, #ec4899, #f43f5e); }
+    .pe { background: linear-gradient(135deg, #14b8a6, #06b6d4); }
+    .art { background: linear-gradient(135deg, #eab308, #f59e0b); }
+    .psychology { background: linear-gradient(135deg, #f472b6, #ec4899); }
+    .morality { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+    .go { background: linear-gradient(135deg, #6b7280, #111827); }
+
+    .panel-card {
+      display: none;
+    }
+
+    .list {
+      display: none;
+    }
+
+    .list-item {
+      display: none;
+    }
+
+    .duplicate-tip {
+      display: none;
+    }
+
+    .duplicate-tip.show {
+      display: block;
+    }
+
+    .footer {
+      margin-top: 12px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .empty-tip {
+      display: none;
+    }
+
+    .empty-tip.show { display: none; }
+    .hidden-state .layout { display: none; }
+
+    .course-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 0;
+      background: rgba(255,255,255,.52);
+      border: 1px solid rgba(255,255,255,.7);
+      border-radius: 14px;
+      padding: 6px;
+      box-shadow: 0 6px 14px rgba(52,78,106,.07);
+    }
+
+    .course-visibility {
+      width: 18px;
+      height: 18px;
+      accent-color: #2563eb;
+      flex: 0 0 auto;
+      cursor: pointer;
+    }
+
+    .course-item.hidden-course {
+      opacity: 0.45;
+      filter: grayscale(0.35);
+    }
+
+    .course-item.hidden-course .course-btn {
+      text-decoration: line-through;
+    }
+
+    .course-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1 1 auto;
+    }
+
+    .course-item .course-btn {
+      flex: 1 1 auto;
+    }
+
+    @media (max-width: 620px) {
+      .tool-input { flex-basis: 100%; }
+      .course-item { flex-direction: column; }
+      .course-item .course-btn { width: 100%; }
+      .course-order { width: 100%; min-width: 0; }
+    }
+
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+      .board { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="appRoot">
+    <div class="header">
+      <div class="badge">深圳市大鹏外国语小学</div>
+      <h1>课表小程序</h1>
+      <p>每个课程都是按钮，按住上下拖动即可重新排序</p>
+    </div>
+
+    <div class="layout" id="mainLayout">
+      <section class="board">
+        <div id="schedule" class="schedule" aria-label="课程表"></div>
+      </section>
+    </div>
+
+    <div class="footer">支持拖拽交换、手动排序、隐藏显示与一键恢复</div>
+  </div>
+
+  <script>
+    const defaultCourses = [
+      { name: '语文', icon: '📖', cls: 'chinese' },
+      { name: '数学', icon: '🔢', cls: 'math' },
+      { name: '英语', icon: '🗣️', cls: 'english' },
+      { name: '科学', icon: '🔬', cls: 'science' },
+      { name: '音乐', icon: '🎵', cls: 'music' },
+      { name: '体育', icon: '🏃', cls: 'pe' },
+      { name: '美术', icon: '🎨', cls: 'art' },
+      { name: '心理', icon: '💗', cls: 'psychology' },
+      { name: '道法', icon: '📘', cls: 'morality' },
+      { name: '围棋', icon: '♟️', cls: 'go' },
+    ];
+
+    const courses = defaultCourses.map(c => ({ ...c }));
+
+    const appRoot = document.getElementById('appRoot');
+    const scheduleEl = document.getElementById('schedule');
+    const courseListEl = document.getElementById('courseList');
+
+    let dragEl = null;
+
+    const renderCourseList = () => {};
+
+    const renderOrderInputs = () => {};
+
+    const updateDuplicateTip = (show) => {};
+
+    const renderSchedule = () => {
+      scheduleEl.innerHTML = '';
+      courses.forEach((course, index) => {
+        const row = document.createElement('div');
+        row.className = 'course-item';
+        row.dataset.courseName = course.name;
+        row.innerHTML = `
+          <input class="course-visibility left-radio" type="radio" name="visibility-${course.name}" data-mode="show" checked aria-label="显示 ${course.name}" />
+          <button class="course-btn ${course.cls}" type="button" draggable="true" data-course-name="${course.name}">
+            <span class="course-left">
+              <span class="course-icon">${course.icon}</span>
+              <span class="course-text">
+                <span class="course-name">${index + 1}. ${course.name}</span>
+              </span>
+            </span>
+            <span class="drag-tip">拖动交换</span>
+          </button>
+          <input class="course-order" type="text" inputmode="numeric" value="" data-course-name="${course.name}" aria-label="${course.name}手动输入顺序" placeholder="输入数字" />
+          <input class="course-visibility right-radio" type="radio" name="visibility-${course.name}" data-mode="hide" aria-label="隐藏 ${course.name}" />
+        `;
+        scheduleEl.appendChild(row);
+      });
+      bindDragEvents();
+    };
+
+    const syncCoursesFromDOM = () => {
+      const names = [...scheduleEl.querySelectorAll('.course-item')].map(row => row.dataset.courseName);
+      const ordered = names.map(name => courses.find(c => c.name === name)).filter(Boolean);
+      courses.splice(0, courses.length, ...ordered);
+    };
+
+    const rerender = () => {
+      renderSchedule();
+    };
+
+    const applyOrderByInputs = () => {
+      const inputs = [...scheduleEl.querySelectorAll('.course-order')];
+      const entries = inputs.map((input, idx) => ({
+        course: courses[idx],
+        value: String(input.value).trim(),
+      }));
+
+      const filled = entries.filter(entry => entry.value !== '');
+      const values = filled.map(entry => Number(entry.value));
+      const hasInvalid = values.some(v => !Number.isInteger(v) || v < 1 || v > courses.length);
+      const unique = new Set(values);
+      const hasRepeat = unique.size !== values.length;
+      updateDuplicateTip(hasInvalid || hasRepeat);
+      if (hasInvalid || hasRepeat) return;
+
+      const next = Array(courses.length).fill(null);
+      const remaining = entries.filter(entry => entry.value === '').map(entry => entry.course);
+
+      entries.forEach(entry => {
+        if (entry.value === '') return;
+        const position = Number(entry.value) - 1;
+        next[position] = entry.course;
+      });
+
+      let restIndex = 0;
+      for (let i = 0; i < next.length; i += 1) {
+        if (next[i] === null) {
+          next[i] = remaining[restIndex];
+          restIndex += 1;
+        }
+      }
+
+      courses.splice(0, courses.length, ...next);
+      rerender();
+      updateDuplicateTip(false);
+    };
+
+
+    const clearHighlights = () => {
+      scheduleEl.querySelectorAll('.course-btn').forEach(btn => btn.classList.remove('swap-highlight'));
+      scheduleEl.querySelectorAll('.course-item').forEach(row => row.classList.remove('dragging-row'));
+    };
+
+    const swapButtons = (a, b) => {
+      const parent = a.parentNode;
+      parent.insertBefore(b, a);
+      parent.insertBefore(a, b.nextSibling);
+    };
+
+    const bindDragEvents = () => {
+      const buttons = scheduleEl.querySelectorAll('.course-btn');
+      buttons.forEach((button) => {
+        const row = button.closest('.course-item');
+        const radios = row ? row.querySelectorAll('.course-visibility') : [];
+
+        button.addEventListener('dragstart', (e) => {
+          dragEl = button;
+          button.classList.add('dragging');
+          const rowEl = button.closest('.course-item');
+          rowEl?.classList.add('dragging-row');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', button.dataset.courseName);
+          e.dataTransfer.setData('text/html', '');
+        });
+
+        button.addEventListener('dragenter', (e) => {
+          e.preventDefault();
+          if (!dragEl || dragEl === button) return;
+          clearHighlights();
+          button.classList.add('swap-highlight');
+          const sourceRow = dragEl.closest('.course-item');
+          const targetRow = button.closest('.course-item');
+          if (sourceRow && targetRow && sourceRow !== targetRow) {
+            const sourceCourse = sourceRow.dataset.courseName;
+            const targetCourse = targetRow.dataset.courseName;
+            const sourceIndex = courses.findIndex(c => c.name === sourceCourse);
+            const targetIndex = courses.findIndex(c => c.name === targetCourse);
+            if (sourceIndex > -1 && targetIndex > -1) {
+              [courses[sourceIndex], courses[targetIndex]] = [courses[targetIndex], courses[sourceIndex]];
+              rerender();
+              dragEl = scheduleEl.querySelector(`.course-btn[data-course-name="${sourceCourse}"]`);
+            }
+          }
+        });
+
+        radios.forEach((radio) => {
+          radio.addEventListener('change', () => {
+            const parent = radio.closest('.course-item');
+            if (!parent) return;
+            parent.classList.toggle('hidden-course', radio.checked && radio.dataset.mode === 'hide');
+          });
+        });
+
+        button.addEventListener('dragover', (e) => {
+          e.preventDefault();
+        });
+
+        button.addEventListener('dragleave', () => {
+          button.classList.remove('swap-highlight');
+        });
+
+        button.addEventListener('dragend', () => {
+          button.classList.remove('dragging');
+          button.closest('.course-item')?.classList.remove('dragging-row');
+          clearHighlights();
+          dragEl = null;
+          syncCoursesFromDOM();
+        });
+
+        button.addEventListener('click', (e) => e.preventDefault());
+      });
+
+      scheduleEl.addEventListener('dragover', (e) => e.preventDefault());
+      scheduleEl.addEventListener('drop', (e) => e.preventDefault());
+    };
+
+    scheduleEl.addEventListener('input', (e) => {
+      if (e.target.classList.contains('course-order')) {
+        updateDuplicateTip(false);
+      }
+    });
+    scheduleEl.addEventListener('change', (e) => {
+      if (e.target.classList.contains('course-order')) {
+        applyOrderByInputs();
+      }
+    });
+
+    renderSchedule();
+    renderCourseList();
+    renderOrderInputs();
+  </script>
+</body>
+</html>

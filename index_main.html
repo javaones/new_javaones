@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>鹏外课堂小程序</title>
+  <style>
+    :root {
+      --bg1: #07111f;
+      --bg2: #0d1730;
+      --card: rgba(255, 255, 255, 0.08);
+      --border: rgba(255, 255, 255, 0.14);
+      --text: #eef6ff;
+      --muted: #a8b7cc;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+      --surface: rgba(7, 17, 31, 0.48);
+      --surface-strong: rgba(7, 17, 31, 0.62);
+      --chip: rgba(255,255,255,0.08);
+      --button-text: #ffffff;
+    }
+
+    body.light {
+      --bg1: #eef6ff;
+      --bg2: #dce9fb;
+      --card: rgba(255, 255, 255, 0.72);
+      --border: rgba(15, 23, 42, 0.10);
+      --text: #0f172a;
+      --muted: #4b5563;
+      --shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+      --surface: rgba(255,255,255,0.68);
+      --surface-strong: rgba(255,255,255,0.86);
+      --chip: rgba(15,23,42,0.06);
+      --button-text: #0f172a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.22), transparent 28%),
+        radial-gradient(circle at top right, rgba(139, 92, 246, 0.18), transparent 26%),
+        radial-gradient(circle at bottom center, rgba(34, 197, 94, 0.14), transparent 24%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      overflow-x: hidden;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      transition: background 0.35s ease, color 0.35s ease;
+    }
+
+    .blob {
+      position: fixed;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      filter: blur(30px);
+      opacity: 0.18;
+      pointer-events: none;
+      z-index: 0;
+      animation: floaty 12s ease-in-out infinite;
+    }
+
+    .blob.one { top: 8%; left: -90px; background: #38bdf8; }
+    .blob.two { right: -100px; bottom: 8%; background: #8b5cf6; animation-direction: reverse; }
+
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      50% { transform: translateY(-18px) translateX(18px); }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 12px 12px 22px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .theme-btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.10);
+      color: var(--button-text);
+      padding: 10px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+      transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+
+    .theme-btn:hover { transform: translateY(-2px); }
+
+    .sound-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      font-size: 12px;
+      user-select: none;
+      backdrop-filter: blur(12px);
+    }
+
+    .sound-chip input { accent-color: #38bdf8; }
+
+    .hero {
+      padding: 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--surface-strong), var(--surface));
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      transition: background 0.35s ease, border-color 0.35s ease;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: auto -70px -70px auto;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.24), transparent 68%);
+      pointer-events: none;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      color: #a5f3fc;
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 36px);
+      line-height: 1.08;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+      max-width: 760px;
+    }
+
+    .launcher-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+      padding-right: 4px;
+    }
+
+    .app-card {
+      position: relative;
+      display: block;
+      text-decoration: none;
+      color: var(--text);
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: var(--surface);
+      box-shadow: 0 14px 28px rgba(0,0,0,0.18);
+      overflow: hidden;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease, background 0.35s ease, border-color 0.35s ease;
+      isolation: isolate;
+      min-height: 154px;
+    }
+
+    .app-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(255,255,255,0.18), transparent 28%, transparent 72%, rgba(255,255,255,0.10));
+      transform: translateX(-110%);
+      transition: transform 0.55s ease;
+      z-index: -1;
+    }
+
+    .app-card:hover {
+      transform: translateY(-6px) scale(1.01);
+      box-shadow: 0 24px 54px rgba(0,0,0,0.30);
+      filter: brightness(1.06);
+    }
+
+    .app-card:hover::before { transform: translateX(110%); }
+
+    .app-card .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      background: rgba(255,255,255,0.14);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+      flex-shrink: 0;
+    }
+
+    .pulse {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 0 0 rgba(34,197,94,0.55);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.55); }
+      70% { box-shadow: 0 0 0 12px rgba(34,197,94,0); }
+      100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+    }
+
+    .app-card h2 {
+      margin: 0;
+      font-size: 19px;
+      line-height: 1.12;
+    }
+
+    .app-card p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 13px;
+    }
+
+    .meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: var(--chip);
+      color: var(--text);
+      font-size: 10px;
+      border: 1px solid rgba(255,255,255,0.10);
+      transition: background 0.35s ease, color 0.35s ease;
+    }
+
+    .card-time { background: linear-gradient(135deg, rgba(34,197,94,0.18), rgba(6,182,212,0.18)); }
+    .card-draw { background: linear-gradient(135deg, rgba(139,92,246,0.18), rgba(236,72,153,0.18)); }
+    .card-feedback { background: linear-gradient(135deg, rgba(255,193,7,0.18), rgba(249,115,22,0.18)); }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: background 0.35s ease, border-color 0.35s ease;
+    }
+
+    .stat .label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .stat .value {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .footer {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .tooltip {
+      position: absolute;
+      top: -12px;
+      right: 16px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.34);
+      border: 1px solid rgba(255,255,255,0.10);
+      color: #fff;
+      font-size: 12px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: all 0.2s ease;
+      pointer-events: none;
+      backdrop-filter: blur(10px);
+    }
+
+    .app-card:hover .tooltip {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .click-ripple {
+      position: fixed;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      pointer-events: none;
+      border: 2px solid rgba(255,255,255,0.55);
+      transform: translate(-50%, -50%) scale(0.3);
+      opacity: 0;
+      transition: transform 0.35s ease, opacity 0.35s ease;
+      z-index: 9999;
+    }
+
+    .click-ripple.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(3.4);
+    }
+
+    @media (max-width: 920px) {
+      .launcher-grid, .stats { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      body { overflow: auto; }
+      .container { padding: 12px 10px 24px; }
+      .hero { padding: 16px; }
+      .launcher-grid, .stats { grid-template-columns: 1fr; }
+      .app-card { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="blob one"></div>
+  <div class="blob two"></div>
+  <div id="ripple" class="click-ripple"></div>
+
+  <div class="container">
+    <div class="topbar">
+      <button class="theme-btn" id="themeToggle" type="button">🌙 深色模式</button>
+      <label class="sound-chip" title="开启或关闭点击音效">
+        <input type="checkbox" id="soundToggle" checked />
+        <span>🔊 点击音效</span>
+      </label>
+    </div>
+
+    <section class="hero">
+      <div class="badge">课堂小程序</div>
+      <h1>深圳市大鹏外国语小学</h1>
+      <p class="subtitle">点击卡片即可在新窗口中打开对应应用。可继续向下滚动浏览更多功能。</p>
+
+      <div class="launcher-grid">
+        <a class="app-card card-time app-link" href="time.html" target="_blank" rel="noopener noreferrer" title="打开时尚倒计时时钟">
+          <div class="tooltip">进入倒计时时钟</div>
+          <div class="top">
+            <div class="icon-box">⏱️</div>
+            <div class="pulse"></div>
+          </div>
+          <h2>倒计时时钟</h2>
+          <p>支持倒计时、铃声提醒和全屏庆祝，适合学习、课堂与演讲。</p>
+          <div class="meta">打开 `time.html` →</div>
+        </a>
+
+        <a class="app-card card-draw app-link" href="draw.html" target="_blank" rel="noopener noreferrer" title="打开绘画小程序">
+          <div class="tooltip">进入绘画小程序</div>
+          <div class="top">
+            <div class="icon-box">🎨</div>
+            <div class="pulse" style="background:#8b5cf6; box-shadow:0 0 0 0 rgba(139,92,246,0.55);"></div>
+          </div>
+          <h2>绘画小程序</h2>
+          <p>支持画笔、图形、文字、导入图片与撤销恢复，适合涂鸦创作。</p>
+          <div class="meta">打开 `draw.html` →</div>
+        </a>
+
+        <a class="app-card card-feedback app-link" href="feedback.html" target="_blank" rel="noopener noreferrer" title="打开课堂反馈小程序">
+          <div class="tooltip">进入课堂反馈</div>
+          <div class="top">
+            <div class="icon-box">📊</div>
+            <div class="pulse" style="background:#ff7b7b; box-shadow:0 0 0 0 rgba(255,123,123,0.55);"></div>
+          </div>
+          <h2>课堂反馈小程序</h2>
+          <p>支持反馈投票、统计占比和饼图展示，适合小学课堂使用。</p>
+          <div class="meta">打开 `feedback.html` →</div>
+        </a>
+
+        <a class="app-card app-link" href="class_schedule.html" target="_blank" rel="noopener noreferrer" title="打开课表小程序">
+          <div class="tooltip">进入课表小程序</div>
+          <div class="top">
+            <div class="icon-box">🗓️</div>
+            <div class="pulse" style="background:#38bdf8; box-shadow:0 0 0 0 rgba(56,189,248,0.55);"></div>
+          </div>
+          <h2>课表小程序</h2>
+          <p>竖向展示课程按钮，支持拖动交换和手动输入排序，适合课表安排。</p>
+          <div class="meta">打开 `class_schedule.html` →</div>
+        </a>
+
+        <a class="app-card app-link" href="http://localhost/roll_call.php" target="_blank" rel="noopener noreferrer" title="打开随机点名小程序">
+          <div class="tooltip">进入随机点名</div>
+          <div class="top">
+            <div class="icon-box">🎯</div>
+            <div class="pulse" style="background:#22c55e; box-shadow:0 0 0 0 rgba(34,197,94,0.55);"></div>
+          </div>
+          <h2>随机点名</h2>
+          <p>从班级名单中随机抽取学生，适合课堂互动与现场点名使用。</p>
+          <div class="meta">打开 `roll_call.php` →</div>
+        </a>
+
+        <a class="app-card app-link" href="http://localhost/pacemaker.php" target="_blank" rel="noopener noreferrer" title="打开模范标兵小程序">
+          <div class="tooltip">进入模范标兵</div>
+          <div class="top">
+            <div class="icon-box">🏆</div>
+            <div class="pulse" style="background:#f59e0b; box-shadow:0 0 0 0 rgba(245,158,11,0.55);"></div>
+          </div>
+          <h2>模范标兵</h2>
+          <p>将学生拖拽分配到各类标兵文本框，适合班级评优与课堂展示。</p>
+          <div class="meta">打开 `pacemaker.php` →</div>
+        </a>
+
+        <a class="app-card app-link" href="check_in.php" target="_blank" rel="noopener noreferrer" title="打开教师社团签到管理">
+          <div class="tooltip">进入教师社团签到管理</div>
+          <div class="top">
+            <div class="icon-box">📝</div>
+            <div class="pulse" style="background:#22c55e; box-shadow:0 0 0 0 rgba(34,197,94,0.55);"></div>
+          </div>
+          <h2>教师社团签到管理</h2>
+          <p>支持按年级、老师查看与导出签到数据，统一管理第七节和第八节签到情况。</p>
+          <div class="meta">打开 `check_in.php` →</div>
+        </a>
+      </div>
+
+      
+    </section>
+
+   
+  </div>
+
+  <script>
+    const themeToggle = document.getElementById('themeToggle');
+    const soundToggle = document.getElementById('soundToggle');
+    const ripple = document.getElementById('ripple');
+    const appLinks = document.querySelectorAll('.app-link');
+
+    const themeKey = 'launcher-theme';
+    const soundKey = 'launcher-sound';
+
+    function setTheme(light) {
+      document.body.classList.toggle('light', light);
+      themeToggle.textContent = light ? '☀️ 亮色模式' : '🌙 深色模式';
+      localStorage.setItem(themeKey, light ? 'light' : 'dark');
+    }
+
+    function playClickSound() {
+      if (!soundToggle.checked) return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = playClickSound.ctx || (playClickSound.ctx = new AudioCtx());
+      if (ctx.state === 'suspended') ctx.resume();
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(720, now);
+      osc.frequency.exponentialRampToValueAtTime(420, now + 0.08);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.08, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.13);
+    }
+
+    function showRipple(x, y) {
+      ripple.style.left = x + 'px';
+      ripple.style.top = y + 'px';
+      ripple.classList.remove('show');
+      void ripple.offsetWidth;
+      ripple.classList.add('show');
+      clearTimeout(showRipple.timer);
+      showRipple.timer = setTimeout(() => ripple.classList.remove('show'), 280);
+    }
+
+    const savedTheme = localStorage.getItem(themeKey) || 'dark';
+    const savedSound = localStorage.getItem(soundKey);
+    setTheme(savedTheme === 'light');
+    if (savedSound !== null) soundToggle.checked = savedSound === 'true';
+
+    themeToggle.addEventListener('click', () => {
+      const light = !document.body.classList.contains('light');
+      setTheme(light);
+      playClickSound();
+    });
+
+    soundToggle.addEventListener('change', () => {
+      localStorage.setItem(soundKey, soundToggle.checked ? 'true' : 'false');
+      playClickSound();
+    });
+
+    appLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        playClickSound();
+        showRipple(e.clientX, e.clientY);
+      });
+    });
+  </script>
+</body>
+</html>

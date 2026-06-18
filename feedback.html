@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>课堂反馈小程序</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg1: #fff3c4;
+      --bg2: #c7f0ff;
+      --card: rgba(255, 255, 255, 0.78);
+      --text: #234;
+      --shadow: 0 18px 40px rgba(50, 90, 120, 0.18);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      background:
+        radial-gradient(circle at top left, #fff 0 10%, transparent 11%),
+        radial-gradient(circle at right top, rgba(255,255,255,.75) 0 8%, transparent 9%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .app {
+      width: min(920px, 100%);
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      border: 3px solid rgba(255,255,255,.7);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .app::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(255,255,255,.34), transparent 28%),
+                  radial-gradient(circle at bottom left, rgba(95,114,189,.12), transparent 26%);
+      pointer-events: none;
+    }
+
+    .corner-title {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      z-index: 2;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(255,255,255,.92), rgba(230,246,255,.85));
+      box-shadow: 0 10px 20px rgba(0,0,0,.08);
+      border: 1px solid rgba(255,255,255,.85);
+      font-size: 14px;
+      font-weight: 800;
+      color: #355;
+      letter-spacing: 1px;
+      animation: fadeUp .8s ease both;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+      animation: fadeUp .8s ease both;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 42px);
+      letter-spacing: 1px;
+      animation: popIn .7s ease both .1s;
+    }
+
+    .header p {
+      margin: 10px 0 0;
+      font-size: 16px;
+      color: #4d6480;
+      animation: fadeUp .8s ease both .18s;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 22px;
+      align-items: stretch;
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel {
+      background: rgba(255,255,255,.82);
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.8);
+    }
+
+    .buttons {
+      display: grid;
+      gap: 16px;
+    }
+
+    .action-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 18px;
+    }
+
+    .reset-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 12px 22px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, #5f72bd, #9b23ea);
+      box-shadow: 0 10px 18px rgba(95, 114, 189, 0.24);
+      transition: transform .15s ease, filter .15s ease;
+    }
+
+    .reset-btn:hover { transform: translateY(-2px); filter: brightness(1.03); }
+    .reset-btn:active { transform: translateY(1px); }
+
+    .feedback-btn {
+      border: none;
+      border-radius: 20px;
+      padding: 18px 18px;
+      cursor: pointer;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: clamp(18px, 2.2vw, 24px);
+      font-weight: 700;
+      box-shadow: 0 12px 22px rgba(0,0,0,.12);
+      transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
+      min-height: 78px;
+    }
+
+    .feedback-btn:hover { transform: translateY(-2px) scale(1.01); filter: brightness(1.03); }
+    .feedback-btn:active { transform: translateY(1px) scale(.995); box-shadow: 0 8px 16px rgba(0,0,0,.12); }
+
+    .pop {
+      animation: pop .35s ease;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(.88); }
+      65% { opacity: 1; transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
+
+    .sparkle {
+      position: fixed;
+      pointer-events: none;
+      font-size: 22px;
+      animation: floatUp .9s ease-out forwards;
+      z-index: 9999;
+      user-select: none;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-80px) scale(1.4); opacity: 0; }
+    }
+
+    .good { background: linear-gradient(135deg, #52d273, #17b96d); }
+    .medium { background: linear-gradient(135deg, #ffd166, #ff9f1c); }
+    .hard { background: linear-gradient(135deg, #ff7b7b, #ff4d6d); }
+
+    .label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .emoji {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.25);
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      flex: 0 0 auto;
+    }
+
+    .count {
+      font-size: 18px;
+      background: rgba(255,255,255,.22);
+      padding: 8px 14px;
+      border-radius: 999px;
+      min-width: 90px;
+      text-align: center;
+    }
+
+    .chart-wrap {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .chart-card {
+      position: relative;
+      width: min(360px, 100%);
+      aspect-ratio: 1 / 1;
+      margin: 0 auto;
+      border-radius: 24px;
+      background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.9), rgba(255,255,255,.6) 35%, rgba(255,255,255,.4) 100%);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.65);
+      padding: 12px;
+    }
+
+    .chart-badge {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #ffca3a, #ff8c42);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 6px 12px;
+      border-radius: 999px;
+      box-shadow: 0 8px 14px rgba(255, 140, 66, .25);
+      z-index: 2;
+    }
+ 
+     .chart-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 0 0 14px;
+      text-align: center;
+    }
+
+    .chart-box {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .chart-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 0 0 14px;
+      text-align: center;
+    }
+
+    .chart-box {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    .summary {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(95,114,189,.12), rgba(155,35,234,.12));
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: #355;
+    }
+
+    .footer-note {
+      margin-top: 14px;
+      text-align: center;
+      color: #597086;
+      font-size: 14px;
+    }
+
+    @media (max-width: 820px) {
+      .content { grid-template-columns: 1fr; }
+      .chart-box { max-width: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="corner-title">深圳市大鹏外国语小学</div>
+    <div class="header">
+      <h1>课堂反馈小程序</h1>
+      <p>点一点击一票，统计全班课堂感受</p>
+    </div>
+
+    <div class="content">
+      <div class="panel">
+        <div class="buttons">
+          <button class="feedback-btn good" id="btnGood">
+            <span class="label"><span class="emoji">😄</span><span>完全听懂</span></span>
+            <span class="count" id="countGood">0 票 · 0%</span>
+          </button>
+
+          <button class="feedback-btn medium" id="btnMedium">
+            <span class="label"><span class="emoji">😵‍💫</span><span>有点晕</span></span>
+            <span class="count" id="countMedium">0 票 · 0%</span>
+          </button>
+
+          <button class="feedback-btn hard" id="btnHard">
+            <span class="label"><span class="emoji">😣</span><span>太难了</span></span>
+            <span class="count" id="countHard">0 票 · 0%</span>
+          </button>
+        </div>
+        <div class="action-row">
+          <button class="reset-btn" id="btnReset">重置统计</button>
+        </div>
+      </div>
+
+      <div class="panel chart-wrap">
+        <h2 class="chart-title">课堂反馈圆环图</h2>
+        <div class="chart-card">
+          <div class="chart-badge">动态统计</div>
+          <div class="chart-box">
+            <canvas id="feedbackChart"></canvas>
+          </div>
+        </div>
+        <div class="summary" id="summaryText">还没有投票，快来反馈吧！</div>
+        <div class="footer-note">点击上方按钮后，图表会自动更新</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const counts = {
+      good: 0,
+      medium: 0,
+      hard: 0,
+    };
+
+    const labels = {
+      good: "完全听懂",
+      medium: "有点晕",
+      hard: "太难了",
+    };
+
+    const colors = ["#17b96d", "#ffb020", "#ff5c7a"];
+
+    const total = () => counts.good + counts.medium + counts.hard;
+    const percent = (value) => {
+      const sum = total();
+      return sum === 0 ? 0 : Math.round((value / sum) * 100);
+    };
+
+    const updateButtons = () => {
+      document.getElementById("countGood").textContent = `${counts.good} 票 · ${percent(counts.good)}%`;
+      document.getElementById("countMedium").textContent = `${counts.medium} 票 · ${percent(counts.medium)}%`;
+      document.getElementById("countHard").textContent = `${counts.hard} 票 · ${percent(counts.hard)}%`;
+    };
+
+    const updateSummary = () => {
+      const sum = total();
+      const summaryText = document.getElementById("summaryText");
+      if (sum === 0) {
+        summaryText.textContent = "还没有投票，快来反馈吧！";
+        return;
+      }
+      const maxValue = Math.max(counts.good, counts.medium, counts.hard);
+      if (maxValue === counts.good) summaryText.textContent = "大家大部分都完全听懂了，太棒啦！";
+      else if (maxValue === counts.medium) summaryText.textContent = "有些同学有点晕，老师可以再讲慢一点哦。";
+      else summaryText.textContent = "这节课有点难，建议老师再举个例子讲解。";
+    };
+
+    const ctx = document.getElementById("feedbackChart");
+    const valueLabelsPlugin = {
+      id: "valueLabelsPlugin",
+      afterDatasetsDraw(chartInstance) {
+        const { ctx } = chartInstance;
+        const dataset = chartInstance.data.datasets[0];
+        const meta = chartInstance.getDatasetMeta(0);
+        const totalValue = dataset.data.reduce((sum, value) => sum + value, 0);
+
+        ctx.save();
+        ctx.font = "bold 15px Microsoft YaHei, sans-serif";
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.shadowColor = "rgba(0,0,0,.25)";
+        ctx.shadowBlur = 4;
+
+        meta.data.forEach((arc, index) => {
+          const value = dataset.data[index] || 0;
+          if (totalValue === 0 || value === 0) return;
+          const position = arc.tooltipPosition();
+          const pct = Math.round((value / totalValue) * 100);
+          ctx.fillText(`${value}票`, position.x, position.y - 8);
+          ctx.fillText(`${pct}%`, position.x, position.y + 12);
+        });
+
+        ctx.restore();
+      }
+    };
+
+    const chart = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: [labels.good, labels.medium, labels.hard],
+        datasets: [{
+          data: [0, 0, 0],
+          backgroundColor: colors,
+          borderColor: "#ffffff",
+          borderWidth: 4,
+          hoverOffset: 10,
+          cutout: "62%",
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+        },
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: {
+              usePointStyle: true,
+              pointStyle: "circle",
+              padding: 20,
+              font: {
+                size: 14,
+                weight: "bold",
+              },
+              color: "#345",
+            },
+          },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const value = context.raw || 0;
+                const sum = total();
+                const pct = sum === 0 ? 0 : Math.round((value / sum) * 100);
+                return `${context.label}: ${value} 票 (${pct}%)`;
+              }
+            }
+          }
+        }
+      },
+      plugins: [valueLabelsPlugin]
+    });
+
+    const updateChart = () => {
+      chart.data.datasets[0].data = [counts.good, counts.medium, counts.hard];
+      chart.update();
+      updateButtons();
+      updateSummary();
+    };
+
+    const playClickSound = (tone = 520) => {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      const audioCtx = playClickSound.audioCtx || (playClickSound.audioCtx = new AudioContextClass());
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "triangle";
+      osc.frequency.value = tone;
+      gain.gain.value = 0.0001;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+      gain.gain.exponentialRampToValueAtTime(0.08, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+      osc.start(now);
+      osc.stop(now + 0.18);
+    };
+
+    const resetAll = () => {
+      counts.good = 0;
+      counts.medium = 0;
+      counts.hard = 0;
+      updateChart();
+    };
+
+    const sparkle = (x, y, symbol) => {
+      const el = document.createElement("div");
+      el.className = "sparkle";
+      el.textContent = symbol;
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 900);
+    };
+
+    const handleVote = (key, button, symbol, tone) => {
+      counts[key] += 1;
+      playClickSound(tone);
+      button.classList.remove("pop");
+      void button.offsetWidth;
+      button.classList.add("pop");
+      const rect = button.getBoundingClientRect();
+      sparkle(rect.left + rect.width * 0.85, rect.top + rect.height * 0.2, symbol);
+      sparkle(rect.left + rect.width * 0.75, rect.top + rect.height * 0.35, "✨");
+      updateChart();
+    };
+
+    window.addEventListener("load", () => {
+      setTimeout(() => playClickSound(760), 150);
+    });
+
+    document.getElementById("btnGood").addEventListener("click", (e) => {
+      handleVote("good", e.currentTarget, "⭐", 660);
+    });
+    document.getElementById("btnMedium").addEventListener("click", (e) => {
+      handleVote("medium", e.currentTarget, "🌟", 540);
+    });
+    document.getElementById("btnHard").addEventListener("click", (e) => {
+      handleVote("hard", e.currentTarget, "💫", 420);
+    });
+    document.getElementById("btnReset").addEventListener("click", resetAll);
+
+    updateChart();
+  </script>
+</body>
+</html>

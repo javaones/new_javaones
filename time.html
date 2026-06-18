@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>时尚倒计时钟</title>
+  <style>
+    :root {
+      --bg1: #050816;
+      --bg2: #0c1630;
+      --card: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --text: #ecf4ff;
+      --muted: #a8b7cc;
+      --accent: #38bdf8;
+      --accent2: #8b5cf6;
+      --good: #22c55e;
+      --warn: #f59e0b;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.2), transparent 28%),
+        radial-gradient(circle at top right, rgba(139, 92, 246, 0.18), transparent 24%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      overflow-x: hidden;
+    }
+
+    .bg-orb {
+      position: fixed;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      filter: blur(30px);
+      opacity: 0.18;
+      pointer-events: none;
+      z-index: 0;
+      animation: floaty 12s ease-in-out infinite;
+    }
+
+    .bg-orb.one { background: #38bdf8; top: 8%; left: -90px; }
+    .bg-orb.two { background: #8b5cf6; bottom: 10%; right: -100px; animation-direction: reverse; }
+
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      50% { transform: translateY(-18px) translateX(14px); }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 18px 40px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .main {
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .main::after {
+      content: "";
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      right: -60px;
+      bottom: -60px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.22), transparent 70%);
+      pointer-events: none;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      color: #a5f3fc;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(32px, 5vw, 58px);
+      line-height: 1.05;
+      letter-spacing: 1px;
+    }
+
+    .subtitle {
+      margin: 14px 0 0;
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 16px;
+      max-width: 760px;
+    }
+
+    .clock-wrap {
+      margin-top: 24px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .clock {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .unit {
+      padding: 18px 12px;
+      border-radius: 22px;
+      background: rgba(6, 12, 24, 0.52);
+      border: 1px solid rgba(255,255,255,0.08);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .unit .num {
+      display: block;
+      font-size: clamp(34px, 5vw, 54px);
+      font-weight: 900;
+      line-height: 1;
+      text-shadow: 0 0 18px rgba(255,255,255,0.08);
+    }
+
+    .unit .label {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: 1px;
+    }
+
+    .time-status {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .time-status strong { color: var(--text); }
+
+    .live-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55); }
+      70% { box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+
+    .side {
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .form-card, .tip-card, .result-card {
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(6, 12, 24, 0.52);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .form-card h3, .tip-card h3, .result-card h3 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 14px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(10, 15, 28, 0.75);
+      color: var(--text);
+      outline: none;
+      font-size: 15px;
+    }
+
+    .field input:focus {
+      border-color: rgba(56, 189, 248, 0.6);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-weight: 800;
+      color: white;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+    }
+
+    button:hover { transform: translateY(-2px); filter: brightness(1.05); }
+    button:active { transform: translateY(0); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    .btn-primary { background: linear-gradient(135deg, #22c55e, #06b6d4); box-shadow: 0 16px 30px rgba(6, 182, 212, 0.22); }
+    .btn-secondary { background: linear-gradient(135deg, #8b5cf6, #ec4899); box-shadow: 0 16px 30px rgba(139, 92, 246, 0.22); }
+    .btn-dark { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); }
+    .btn-warn { background: linear-gradient(135deg, #f59e0b, #ef4444); box-shadow: 0 16px 30px rgba(245, 158, 11, 0.18); }
+
+    .toggle-row {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .switch {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .switch span {
+      color: var(--muted);
+      font-size: 12px;
+      display: block;
+      margin-top: 4px;
+    }
+
+    .switch input {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--accent);
+    }
+
+    .quick-set {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .chip {
+      padding: 10px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .result-card {
+      min-height: 184px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .result {
+      font-size: clamp(28px, 4vw, 50px);
+      font-weight: 900;
+      line-height: 1.1;
+      margin: 0;
+    }
+
+    .result small {
+      display: block;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .party {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 5;
+    }
+
+    .party.active { opacity: 1; }
+
+    .confetti {
+      position: absolute;
+      width: 14px;
+      height: 24px;
+      top: -30px;
+      border-radius: 4px;
+      animation: fall 2.4s linear infinite;
+      transform-origin: center;
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(0) rotate(0deg); }
+      100% { transform: translateY(110vh) rotate(720deg); }
+    }
+
+    .celebrate {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+      z-index: 6;
+    }
+
+    .celebrate.active { opacity: 1; }
+
+    .full-burst {
+      background:
+        radial-gradient(circle at center, rgba(255,255,255,0.16), rgba(56, 189, 248, 0.22) 26%, rgba(139, 92, 246, 0.16) 52%, rgba(0,0,0,0.76) 100%);
+    }
+
+    .dance {
+      width: min(70vw, 420px);
+      aspect-ratio: 1;
+      border-radius: 34px;
+      display: grid;
+      place-items: center;
+      font-size: clamp(72px, 12vw, 160px);
+      background: radial-gradient(circle, rgba(255,255,255,0.24), rgba(255,255,255,0.06) 55%, transparent 70%);
+      animation: wiggle 0.45s infinite alternate ease-in-out, glow 1.2s infinite alternate;
+      filter: drop-shadow(0 16px 40px rgba(56, 189, 248, 0.3));
+    }
+
+    @keyframes wiggle {
+      0% { transform: rotate(-8deg) scale(0.96) translateY(0); }
+      100% { transform: rotate(8deg) scale(1.04) translateY(-8px); }
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 0 0 rgba(56, 189, 248, 0.0); }
+      to { box-shadow: 0 0 44px rgba(56, 189, 248, 0.35); }
+    }
+
+    .footer {
+      margin-top: 18px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 14px;
+    }
+
+    @media (max-width: 980px) {
+      .hero { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .container { padding: 16px 12px 28px; }
+      .main, .side { padding: 18px; }
+      .clock { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .field-grid, .btn-row, .quick-set { grid-template-columns: 1fr 1fr; }
+      .quick-set { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 480px) {
+      .clock, .field-grid, .btn-row, .quick-set { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-orb one"></div>
+  <div class="bg-orb two"></div>
+  <div class="party" id="party"></div>
+  <div class="celebrate" id="celebrate">
+    <div class="dance">🎉</div>
+  </div>
+  <div class="celebrate" id="fullCelebrate">
+    <div class="dance">✨</div>
+  </div>
+
+  <div class="container">
+    <section class="hero">
+      <div class="panel main">
+        <div class="badge">深圳市大鹏外国语小学</div>
+        <h1>倒计时时钟</h1>
+        <p class="subtitle">支持自定义小时、分钟、秒，点击开始即可运行。时间一到，会触发舞动动画和庆祝特效，也能随时重新设定、暂停和继续。</p>
+
+        <div class="clock-wrap">
+          <div class="time-status">
+            <span class="live-dot"><span class="dot"></span><strong id="statusText">等待设定时间</strong></span>
+            <span id="targetText">目标时间：未设置</span>
+          </div>
+          <div class="clock">
+            <div class="unit"><span class="num" id="hours">00</span><span class="label">小时</span></div>
+            <div class="unit"><span class="num" id="minutes">00</span><span class="label">分钟</span></div>
+            <div class="unit"><span class="num" id="seconds">00</span><span class="label">秒</span></div>
+            <div class="unit"><span class="num" id="millis">00</span><span class="label">毫秒</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel side">
+        <div class="form-card">
+          <h3>设定倒计时</h3>
+          <div class="field-grid">
+            <div class="field">
+              <label for="hInput">小时</label>
+              <input id="hInput" type="number" min="0" max="99" value="0" />
+            </div>
+            <div class="field">
+              <label for="mInput">分钟</label>
+              <input id="mInput" type="number" min="0" max="59" value="5" />
+            </div>
+            <div class="field">
+              <label for="sInput">秒</label>
+              <input id="sInput" type="number" min="0" max="59" value="0" />
+            </div>
+            <div class="field">
+              <label for="labelInput">标题</label>
+              <input id="labelInput" type="text" value="专注计时" />
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn-primary" id="startBtn">开始</button>
+            <button class="btn-secondary" id="pauseBtn">暂停</button>
+            <button class="btn-dark" id="resetBtn">重新设定</button>
+            <button class="btn-warn" id="finishBtn">立即结束</button>
+          </div>
+
+          <div class="toggle-row">
+            <label class="switch">
+              <div>
+                <strong>铃声提醒</strong>
+                <span>倒计时结束时播放提示音</span>
+              </div>
+              <input type="checkbox" id="soundToggle" checked />
+            </label>
+            <label class="switch">
+              <div>
+                <strong>循环番茄钟模式</strong>
+                <span>结束后自动开始下一轮专注与休息</span>
+              </div>
+              <input type="checkbox" id="pomodoroToggle" />
+            </label>
+            <label class="switch">
+              <div>
+                <strong>全屏爆发动画</strong>
+                <span>完成时自动触发更强的庆祝特效</span>
+              </div>
+              <input type="checkbox" id="fullScreenToggle" checked />
+            </label>
+          </div>
+
+          <div class="quick-set">
+            <button class="chip" data-time="300">5 分钟</button>
+            <button class="chip" data-time="600">10 分钟</button>
+            <button class="chip" data-time="1800">30 分钟</button>
+            <button class="chip" data-time="3600">1 小时</button>
+          </div>
+        </div>
+
+        <div class="result-card">
+          <div>
+            <h3>当前状态</h3>
+            <p class="result" id="resultText">准备开始</p>
+            <small id="resultTip">先设定一个时间，再点击开始。</small>
+          </div>
+          <div class="celebrate" id="innerCelebrate">
+            <div class="dance">💃</div>
+          </div>
+        </div>
+
+        <div class="tip-card">
+          <h3>实用提示</h3>
+          <div style="color:var(--muted);line-height:1.8;font-size:14px;">
+            可用于课堂活动、演讲倒计时、学习番茄钟、答题限时、会议提醒。支持暂停、继续、快速预设和重置。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">如果你愿意，我还可以继续帮你加“铃声提醒”“全屏爆发动画”“循环番茄钟模式”。</div>
+  </div>
+
+  <script>
+    const hInput = document.getElementById('hInput');
+    const mInput = document.getElementById('mInput');
+    const sInput = document.getElementById('sInput');
+    const labelInput = document.getElementById('labelInput');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const finishBtn = document.getElementById('finishBtn');
+    const soundToggle = document.getElementById('soundToggle');
+    const pomodoroToggle = document.getElementById('pomodoroToggle');
+    const fullScreenToggle = document.getElementById('fullScreenToggle');
+    const resultText = document.getElementById('resultText');
+    const resultTip = document.getElementById('resultTip');
+    const statusText = document.getElementById('statusText');
+    const targetText = document.getElementById('targetText');
+    const party = document.getElementById('party');
+    const celebrate = document.getElementById('celebrate');
+    const fullCelebrate = document.getElementById('fullCelebrate');
+    const innerCelebrate = document.getElementById('innerCelebrate');
+
+    const hoursEl = document.getElementById('hours');
+    const minutesEl = document.getElementById('minutes');
+    const secondsEl = document.getElementById('seconds');
+    const millisEl = document.getElementById('millis');
+
+    let timer = null;
+    let endTime = null;
+    let remainingMs = 0;
+    let running = false;
+    let paused = false;
+    let audioCtx = null;
+    let loopPhase = 'focus';
+    let loopPlan = { focus: 25 * 60 * 1000, break: 5 * 60 * 1000 };
+
+    function pad(n) { return String(Math.max(0, Math.floor(n))).padStart(2, '0'); }
+
+    function getInputMs() {
+      const h = Math.max(0, Number(hInput.value) || 0);
+      const m = Math.max(0, Number(mInput.value) || 0);
+      const s = Math.max(0, Number(sInput.value) || 0);
+      return ((h * 3600) + (m * 60) + s) * 1000;
+    }
+
+    function formatTime(ms) {
+      const safe = Math.max(0, ms);
+      const h = Math.floor(safe / 3600000);
+      const m = Math.floor((safe % 3600000) / 60000);
+      const s = Math.floor((safe % 60000) / 1000);
+      const msPart = Math.floor((safe % 1000) / 10);
+      return { h, m, s, msPart };
+    }
+
+    function render(ms) {
+      const t = formatTime(ms);
+      hoursEl.textContent = pad(t.h);
+      minutesEl.textContent = pad(t.m);
+      secondsEl.textContent = pad(t.s);
+      millisEl.textContent = pad(t.msPart);
+    }
+
+    function updateStatus(text, tip) {
+      statusText.textContent = text;
+      resultText.textContent = text;
+      if (tip) resultTip.textContent = tip;
+    }
+
+    function clearEffects() {
+      celebrate.classList.remove('active');
+      fullCelebrate.classList.remove('active');
+      celebrate.classList.remove('full-burst');
+      innerCelebrate.classList.remove('active');
+      party.classList.remove('active');
+      party.innerHTML = '';
+    }
+
+    function makeConfetti(intense = false) {
+      const colors = ['#38bdf8', '#8b5cf6', '#22c55e', '#f59e0b', '#fb7185', '#ffffff'];
+      party.innerHTML = '';
+      const count = intense ? 180 : 80;
+      for (let i = 0; i < count; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti';
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.animationDelay = (Math.random() * (intense ? 0.8 : 1.4)) + 's';
+        el.style.animationDuration = (1.4 + Math.random() * (intense ? 1.4 : 1.8)) + 's';
+        el.style.background = colors[Math.floor(Math.random() * colors.length)];
+        el.style.transform = `rotate(${Math.random() * 180}deg)`;
+        el.style.width = (8 + Math.random() * (intense ? 14 : 10)) + 'px';
+        el.style.height = (12 + Math.random() * (intense ? 26 : 18)) + 'px';
+        party.appendChild(el);
+      }
+      party.classList.add('active');
+    }
+
+    function beep() {
+      if (!soundToggle.checked) return;
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.22, audioCtx.currentTime + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
+        oscillator.connect(gain);
+        gain.connect(audioCtx.destination);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.5);
+      } catch (e) {}
+    }
+
+    function triggerBurst() {
+      const intense = fullScreenToggle.checked;
+      celebrate.classList.toggle('full-burst', intense);
+      celebrate.classList.add('active');
+      fullCelebrate.classList.add('active');
+      innerCelebrate.classList.add('active');
+      makeConfetti(intense);
+      beep();
+    }
+
+    function finish() {
+      stopTimer();
+      render(0);
+      updateStatus('时间到！', `"${labelInput.value || '倒计时'}" 已完成，点击重新设定可再次开始。`);
+      targetText.textContent = '目标时间：已结束';
+      triggerBurst();
+      setTimeout(() => {
+        clearEffects();
+      }, 6000);
+
+      if (pomodoroToggle.checked) {
+        const nextMs = loopPhase === 'focus' ? loopPlan.break : loopPlan.focus;
+        loopPhase = loopPhase === 'focus' ? 'break' : 'focus';
+        updateStatus(loopPhase === 'break' ? '番茄钟休息开始' : '番茄钟专注开始', loopPhase === 'break' ? '休息一下，稍后自动进入下一轮。' : '新一轮专注开始，继续前进。');
+        const totalSec = Math.max(1, Math.round(nextMs / 1000));
+        hInput.value = Math.floor(totalSec / 3600);
+        mInput.value = Math.floor((totalSec % 3600) / 60);
+        sInput.value = totalSec % 60;
+        setTimeout(() => startTimer(), 1500);
+      }
+    }
+
+    function tick() {
+      const now = Date.now();
+      const left = endTime - now;
+      render(left);
+      if (left <= 0) {
+        finish();
+      }
+    }
+
+    function startTimer() {
+      const inputMs = getInputMs();
+      if (inputMs <= 0) {
+        updateStatus('请先设定时间', '请输入大于 0 的倒计时时间。');
+        return;
+      }
+      clearEffects();
+      remainingMs = inputMs;
+      endTime = Date.now() + remainingMs;
+      running = true;
+      paused = false;
+      startBtn.textContent = '运行中';
+      pauseBtn.textContent = '暂停';
+      targetText.textContent = `目标时间：${labelInput.value || '倒计时'} · ${Math.ceil(inputMs / 1000)} 秒`;
+      updateStatus('倒计时进行中', '高效运行中，时间会实时刷新。');
+      tick();
+      timer = setInterval(tick, 50);
+    }
+
+    function stopTimer() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      running = false;
+      paused = false;
+      startBtn.textContent = '开始';
+    }
+
+    function pauseResume() {
+      if (!running && !paused) return;
+      if (running) {
+        remainingMs = Math.max(0, endTime - Date.now());
+        stopTimer();
+        paused = true;
+        pauseBtn.textContent = '继续';
+        updateStatus('已暂停', '点击继续可恢复倒计时。');
+      } else if (paused) {
+        endTime = Date.now() + remainingMs;
+        paused = false;
+        running = true;
+        pauseBtn.textContent = '暂停';
+        startBtn.textContent = '运行中';
+        updateStatus('倒计时进行中', '已继续运行。');
+        timer = setInterval(tick, 50);
+      }
+    }
+
+    function resetAll() {
+      stopTimer();
+      clearEffects();
+      remainingMs = 0;
+      endTime = null;
+      loopPhase = 'focus';
+      render(0);
+      targetText.textContent = '目标时间：未设置';
+      updateStatus('准备开始', '先设定一个时间，再点击开始。');
+      resultTip.textContent = '先设定一个时间，再点击开始。';
+      pauseBtn.textContent = '暂停';
+      fullScreenToggle.checked = true;
+    }
+
+    function finishNow() {
+      if (running || paused) {
+        finish();
+      } else {
+        clearEffects();
+        triggerBurst();
+        updateStatus('立刻庆祝模式', '你可以把它当作演示结束动画。');
+      }
+    }
+
+    startBtn.addEventListener('click', startTimer);
+    pauseBtn.addEventListener('click', pauseResume);
+    resetBtn.addEventListener('click', resetAll);
+    finishBtn.addEventListener('click', finishNow);
+
+    document.querySelectorAll('.chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sec = Number(btn.dataset.time);
+        hInput.value = Math.floor(sec / 3600);
+        mInput.value = Math.floor((sec % 3600) / 60);
+        sInput.value = sec % 60;
+        updateStatus('已快速设定', `当前预设为 ${btn.textContent.trim()}。`);
+        render(sec * 1000);
+      });
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) {
+        celebrate.classList.remove('full-burst');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+
+    render(0);
+  </script>
+</body>
+</html>
